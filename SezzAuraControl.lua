@@ -11,12 +11,14 @@ local MAJOR, MINOR = "Sezz:Controls:Aura-0.1", 1;
 local APkg = Apollo.GetPackage(MAJOR);
 if (APkg and (APkg.nVersion or 0) >= MINOR) then return; end
 
-local NAME = string.match(MAJOR, ":(%a+)\-");
 local AuraControl = APkg and APkg.tPackage or {};
 local GeminiGUI, GeminiTimer, log;
 
 -- Lua API
-local format, floor, mod = string.format, math.floor, math.mod;
+local format, floor, mod, strlen = string.format, math.floor, math.mod, string.len;
+
+-- Wildstar API
+local Apollo = Apollo;
 
 -----------------------------------------------------------------------------
 -- Tooltips
@@ -59,6 +61,38 @@ local GenerateBuffTooltipForm = function(luaCaller, wndParent, splSource, tFlags
 	wndTooltip:SetAnchorOffsets(0, 0, wndTooltip:GetWidth(), wndTooltip:GetHeight() + wndTooltip:FindChild("GeneralDescriptionString"):GetHeight())
 
 	return wndTooltip
+end
+
+local wndTooltipContainer;
+local tTooltipContainer = {
+	__XmlNode = "Forms",
+	{ -- Form
+		__XmlNode="Form", Class="BuffWindow",
+		LAnchorPoint="0", LAnchorOffset="0", TAnchorPoint="0", TAnchorOffset="0", RAnchorPoint="0", RAnchorOffset="0", BAnchorPoint="0", BAnchorOffset="0",
+		RelativeToClient="1", Template="Default",
+		Font="Default", Text="", TooltipType="OnCursor",
+		BGColor="00000000", TextColor="UI_WindowTextDefault",
+		Border="0", Picture="1", SwallowMouseClicks="0", Moveable="0", Escapable="0", IgnoreMouse="1",
+		Overlapped="1", TooltipColor="", Sprite="", Tooltip="",
+		Name="SezzAuraTooltipContainer", Visible="0",
+		BuffDispellable="1", BuffNonDispellable="1", DebuffDispellable="1", DebuffNonDispellable="1", Hero="0", PulseWhenExpiring="0", DoNotShowTimeRemaining="1", ShowMS="0",
+	},
+};
+
+local function GetTooltipText(tAura)
+	if (wndTooltipContainer and wndTooltipContainer:IsValid()) then
+		wndTooltipContainer:Destroy();
+	end
+
+	tTooltipContainer[1].BuffIndex = tAura.nIndex;
+	tTooltipContainer[1].BeneficialBuffs = tAura.bIsDebuff and "0" or "1";
+	tTooltipContainer[1].HarmfulBuffs = tAura.bIsDebuff and "1" or "0";
+
+	wndTooltipContainer = Apollo.LoadForm(XmlDoc.CreateFromTable(tTooltipContainer), "SezzAuraTooltipContainer", nil, self);
+	wndTooltipContainer:SetUnit(tAura.unit); -- Doesn't work?
+
+	local strTooltip = wndTooltipContainer:GetBuffTooltip();
+	return strlen(strTooltip) > 0 and strTooltip or nil;
 end
 
 local GetBuffTooltip = function(self)
@@ -183,21 +217,26 @@ function AuraControl:UpdateCount(nCount)
 end
 
 function AuraControl:UpdateTooltip()
+	if (not self.wndMain.strBuffTooltip) then
+		self.wndMain.strBuffTooltip = GetTooltipText(self.tAura) or self.tAura.splEffect:GetFlavor();
+	end
+
 	if (not self.wndMain.GetBuffTooltip) then
 		self.wndMain.GetBuffTooltip = GetBuffTooltip;
+		GenerateBuffTooltipForm(self.wndIcon, self.wndMain, self.tAura.splEffect);
 	end
-
-	if (not self.wndMain.strBuffTooltip) then
-		self.wndMain.strBuffTooltip = self.tAura.splEffect:GetFlavor();
-	end
-
-	GenerateBuffTooltipForm(self.wndIcon, self.wndMain, self.tAura.splEffect);
 end
 
 function AuraControl:CancelAura(wndHandler, wndControl, eMouseButton)
 	if (eMouseButton == GameLib.CodeEnumInputMouse.Right) then
 		log:debug("Cancel Aura: %s (ID: %d)", self.tAura.splEffect:GetName(), self.tAura.splEffect:GetId());
 	end
+end
+
+function AuraControl:Update(tAura)
+	self.tAuraData.nIndex = tAura.nIndex;
+	self:UpdateDuration(tAura.fTimeRemaining);
+	self:UpdateCount(tAura.nCount);
 end
 
 -----------------------------------------------------------------------------
@@ -238,7 +277,7 @@ function AuraControl:New(wndParent, tAuraData, tWindowPrototype)
 	self:UpdateCount(tAuraData.nCount);
 
 	-- Create Tooltip
-	self:UpdateTooltip();
+	self.wndIcon:AddEventHandler("MouseEnter", "UpdateTooltip", self);
 
 	-- Add Click Event (Cancel Aura)
 	self.wndIcon:AddEventHandler("MouseButtonUp", "CancelAura", self);
