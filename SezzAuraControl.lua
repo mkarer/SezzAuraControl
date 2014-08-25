@@ -72,7 +72,7 @@ local tTooltipContainer = {
 		RelativeToClient="1", Template="Default",
 		Font="Default", Text="", TooltipType="OnCursor",
 		BGColor="00000000", TextColor="UI_WindowTextDefault",
-		Border="0", Picture="1", SwallowMouseClicks="0", Moveable="0", Escapable="0", IgnoreMouse="1",
+		Border="0", Picture="0", SwallowMouseClicks="0", Moveable="0", Escapable="0", IgnoreMouse="1",
 		Overlapped="1", TooltipColor="", Sprite="", Tooltip="",
 		Name="SezzAuraTooltipContainer", Visible="0",
 		BuffDispellable="1", BuffNonDispellable="1", DebuffDispellable="1", DebuffNonDispellable="1", Hero="0", PulseWhenExpiring="0", DoNotShowTimeRemaining="1", ShowMS="0",
