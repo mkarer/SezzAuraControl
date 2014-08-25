@@ -89,7 +89,7 @@ local function GetTooltipText(tAura)
 	tTooltipContainer[1].HarmfulBuffs = tAura.bIsDebuff and "1" or "0";
 
 	wndTooltipContainer = Apollo.LoadForm(XmlDoc.CreateFromTable(tTooltipContainer), "SezzAuraTooltipContainer", nil, self);
-	wndTooltipContainer:SetUnit(tAura.unit); -- Doesn't work?
+	wndTooltipContainer:SetUnit(tAura.unit.__proto__ or tAura.unit);
 
 	local strTooltip = wndTooltipContainer:GetBuffTooltip();
 	return strlen(strTooltip) > 0 and strTooltip or nil;
