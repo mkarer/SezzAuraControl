@@ -18,7 +18,7 @@ local GeminiGUI, GeminiTimer, log;
 local format, floor, mod, strlen = string.format, math.floor, math.mod, string.len;
 
 -- Wildstar API
-local Apollo = Apollo;
+local Apollo, XmlDoc = Apollo, XmlDoc;
 
 -----------------------------------------------------------------------------
 -- Tooltips
@@ -151,7 +151,7 @@ function AuraControl:Destroy()
 	self = nil;
 end
 
-local TimeBreakDown = function(nSeconds)
+local function TimeBreakDown(nSeconds)
     local nDays = floor(nSeconds / (60 * 60 * 24));
     local nHours = floor((nSeconds - (nDays * (60 * 60 * 24))) / (60 * 60));
     local nMinutes = floor((nSeconds - (nDays * (60 * 60 * 24)) - (nHours * (60 * 60))) / 60);
